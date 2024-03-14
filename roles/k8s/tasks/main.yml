@@ -52,12 +52,12 @@
     state: directory
     mode: '0755'
   become: yes
-###
-- name: Download and install Kubernetes apt keyring
-  shell: "curl -fsSL {{ k8s_gpg_key_url }} | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg"
-  args:
-    executable: /bin/bash
-  become: yes
+
+# - name: Download and install Kubernetes apt keyring
+#   shell: "curl -fsSL {{ k8s_gpg_key_url }} | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg"
+#   args:
+#     executable: /bin/bash
+#   become: yes
 
 - name: Check if Kubernetes apt keyring file exists
   stat:
