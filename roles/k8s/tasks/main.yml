@@ -72,13 +72,14 @@
     update_cache: yes
 
 - name: Install Kubernetes packages
-  become: yes
   apt:
-    name:
+    name: "{{ item }}"
+    state: present
+  with_items:
       - kubelet
       - kubeadm
       - kubectl
-    state: present
+  become: yes
 
 
 - name: Disable swap
