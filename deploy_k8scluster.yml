@@ -1,0 +1,13 @@
+---
+- name: Deploy Kubernetes Cluster
+  hosts: servers  
+  become: true
+  tasks:
+    - name: containerd-runc
+      import_role:
+        name: containerd-runc
+    - name: k8s
+      import_role:
+              name: k8s
+
+

@@ -1,0 +1,131 @@
+---
+# tasks file for k8s
+
+- name: Copy k8s.conf to /etc/modules-load.d/k8s.conf
+  ansible.builtin.copy:
+    src: "{{ role_path }}/files/k8s.conf"
+    dest: "/etc/modules-load.d/k8s.conf"
+    mode: '0755'
+    remote_src: false
+
+- name: Load kernel modules overlay and br_netfilter
+  command: modprobe {{ item }}
+  with_items:
+    - overlay
+    - br_netfilter
+  become: true
+  
+# sysctl params required by setup, params persist across reboots  
+- name: Copy k8s.conf to /etc/modules-load.d/k8s.conf
+  ansible.builtin.copy:
+    src: "{{ role_path }}/files/k8s2.conf"
+    dest: "/etc/sysctl.d/k8s.conf"
+    mode: '0755'
+    remote_src: false
+
+# Apply sysctl params without reboot
+- name: Run sysctl --system command
+  command: sysctl --system
+  become: true
+
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+  become: yes
+
+- name: Install required packages
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - gnupg
+  become: yes
+
+
+- name: Ensure /etc/apt/keyrings directory exists
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  become: yes
+
+- name: Download and install Kubernetes apt keyring
+  shell: "curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg"
+  args:
+    executable: /bin/bash
+  become: yes
+
+- name: Add Kubernetes repository configuration
+  lineinfile:
+    path: /etc/apt/sources.list.d/kubernetes.list
+    line: 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /'
+    create: yes
+  become: yes
+
+- name: Update and upgrade apt packages
+  become: true
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: Install Kubernetes packages
+  become: yes
+  apt:
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: present
+
+
+- name: Disable swap
+  become: yes
+  ansible.builtin.command: swapoff -a
+
+- name: Remove swap entries from /etc/fstab
+  become: yes
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    state: absent
+    regexp: '^.*swap.*$'
+
+
+- name: Initialize Kubernetes cluster with kubeadm
+  become: yes
+  ansible.builtin.command: kubeadm init --pod-network-cidr="{{ pod_cidr }}"
+
+- name: Create .kube directory
+  file:
+    path: "{{ ansible_env.HOME }}/.kube"
+    state: directory
+    owner: "{{ ansible_env.USER }}"
+    group: "{{ ansible_env.USER }}"
+
+- name: Copy Kubernetes admin config
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "{{ ansible_env.HOME }}/.kube/config"
+    owner: "{{ ansible_env.USER }}"
+    group: "{{ ansible_env.USER }}"
+    mode: '0644'
+
+
+- name: Change ownership of ~/.kube/config
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.kube/config"
+    owner: "{{ ansible_env.USER }}"
+    group: "{{ ansible_env.USER }}"
+  become: yes
+
+
+- name: Apply Flannel CNI manifest
+  ansible.builtin.shell: kubectl apply -f  {{ flannel_manifest_url }}
+  become: yes
+
+
+- name: Taint Kubernetes node
+  ansible.builtin.shell: kubectl taint node {{ node_name }} --all {{ taint_key }}
+  become: yes

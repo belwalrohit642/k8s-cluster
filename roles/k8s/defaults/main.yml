@@ -1,0 +1,16 @@
+# ---
+# # defaults file for k8s
+# file-path-k8sconf: "roles/k8s/files/k8s.conf"
+# dest-k8sconf: "/etc/modules-load.d"
+
+# file-path-k8s2conf: "/home/rohit/Documents/ansible/k8scluster/roles/k8s/files/k8s2.conf"              
+
+
+pod_cidr: "10.244.0.0/16"
+
+k8s_gpg_key_url: "https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key"
+
+flannel_manifest_url: "https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"
+
+node_name: ubuntu-ideapad-3-14itl6
+taint_key: node-role.kubernetes.io/control-plane-
