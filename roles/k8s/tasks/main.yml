@@ -54,7 +54,7 @@
   become: yes
 ###
 - name: Download and install Kubernetes apt keyring
-  shell: "curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg"
+  shell: "curl -fsSL {{ k8s_gpg_key_url }} | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg"
   args:
     executable: /bin/bash
   become: yes
@@ -65,7 +65,7 @@
   register: keyring_file
 
 - name: Download and install Kubernetes apt keyring if not exists
-  shell: "curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg"
+  shell: "curl -fsSL {{ k8s_gpg_key_url }} | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg"
   args:
     executable: /bin/bash
   become: yes
