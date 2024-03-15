@@ -105,30 +105,16 @@
     state: absent
     regexp: '^.*swap.*$'
 
-
-# - name: Initialize Kubernetes cluster with kubeadm
-#   become: yes
-#   ansible.builtin.command: kubeadm init --pod-network-cidr="{{ pod_cidr }}"
-
-- name: Check if Kubernetes manifests exist
-  ansible.builtin.stat:
-    path: "{{ item }}"
-  register: kubernetes_manifests
-  with_items:
-    - /etc/kubernetes/manifests/kube-apiserver.yaml
-    - /etc/kubernetes/manifests/kube-controller-manager.yaml
-    - /etc/kubernetes/manifests/kube-scheduler.yaml
-    - /etc/kubernetes/manifests/etcd.yaml
-  ignore_errors: yes
+- name: Reset Kubernetes cluster with kubeadm
+  become: yes
+  ansible.builtin.command: kubeadm reset --force
 
 - name: Initialize Kubernetes cluster with kubeadm
   become: yes
   ansible.builtin.command: kubeadm init --pod-network-cidr="{{ pod_cidr }}"
-  when: 
-    - kubernetes_manifests.results | map(attribute='stat.exists') | list | count == 0
 
 
-- name: Create .kube directory
+- name: Create .kube directory  
   file:
     path: "{{ ansible_env.HOME }}/.kube"
     state: directory
